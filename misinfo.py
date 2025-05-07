@@ -5,12 +5,11 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import tokenizer_from_json
 
-# Load tokenizer
 @st.cache_resource
 def load_tokenizer():
     with open("tokenizer.json", "r", encoding="utf-8") as f:
-        tokenizer_data = json.load(f)
-        tokenizer = tokenizer_from_json(tokenizer_data)
+        tokenizer_data = json.loads(f.read())
+    tokenizer = tokenizer_from_json(tokenizer_data)
     return tokenizer
 
 # Load model
