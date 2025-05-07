@@ -8,8 +8,8 @@ from tensorflow.keras.preprocessing.text import tokenizer_from_json
 @st.cache_resource
 def load_tokenizer():
     with open("tokenizer.json", "r", encoding="utf-8") as f:
-        tokenizer_data = json.loads(f.read())
-    tokenizer = tokenizer_from_json(tokenizer_data)
+        tokenizer_json_str = f.read()  # ✅ Read file content as a string
+    tokenizer = tokenizer_from_json(tokenizer_json_str)
     return tokenizer
 
 # Load model
