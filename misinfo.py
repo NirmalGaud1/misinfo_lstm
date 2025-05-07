@@ -4,6 +4,13 @@ import json
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import tokenizer_from_json
+from tensorflow.keras.layers import LSTM as OriginalLSTM
+from tensorflow.keras import backend as K
+
+class CustomLSTM(OriginalLSTM):
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('time_major', None)  # Ignore time_major if present
+        super().__init__(*args, **kwargs)
 
 @st.cache_resource
 def load_tokenizer():
@@ -15,11 +22,18 @@ def load_tokenizer():
 # Load model
 @st.cache_resource
 def load_model_lstm():
-    model = load_model("lstm_misinformation_model.h5")
-    return model
+    custom_objects = {'LSTM': CustomLSTM}
+    try:
+        model = load_model("lstm_misinformation_model.h5", custom_objects=custom_objects)
+        return model
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        return None
 
 # Predict function
 def predict_misinformation(text, tokenizer, model):
+    if model is None:
+        return -1, 0.0  # Indicate model loading failure
     seq = tokenizer.texts_to_sequences([text])
     padded = pad_sequences(seq, maxlen=100, padding='post')
     pred = model.predict(padded)[0][0]
@@ -40,13 +54,16 @@ def main():
         else:
             tokenizer = load_tokenizer()
             model = load_model_lstm()
-            label, score = predict_misinformation(input_text, tokenizer, model)
+            if model is not None:
+                label, score = predict_misinformation(input_text, tokenizer, model)
 
-            st.subheader("Prediction")
-            if label == 1:
-                st.error(f"🛑 This text is likely **Misinformation**. (Confidence: {score:.2f})")
+                st.subheader("Prediction")
+                if label == 1:
+                    st.error(f"🛑 This text is likely **Misinformation**. (Confidence: {score:.2f})")
+                else:
+                    st.success(f"✅ This text is likely **Not Misinformation**. (Confidence: {score:.2f})")
             else:
-                st.success(f"✅ This text is likely **Not Misinformation**. (Confidence: {score:.2f})")
+                st.error("Failed to load the model. Please check the error message above.")
 
     st.markdown("---")
     st.caption("Built with 🧠 LSTM · Streamlit · Keras")
