@@ -5,7 +5,6 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import tokenizer_from_json
 from tensorflow.keras.layers import LSTM as OriginalLSTM
-from tensorflow.keras import backend as K
 
 class CustomLSTM(OriginalLSTM):
     def __init__(self, *args, **kwargs):
@@ -15,11 +14,11 @@ class CustomLSTM(OriginalLSTM):
 @st.cache_resource
 def load_tokenizer():
     with open("tokenizer.json", "r", encoding="utf-8") as f:
-        tokenizer_json_str = f.read()  # ✅ Read file content as a string
+        tokenizer_json_str = f.read()
     tokenizer = tokenizer_from_json(tokenizer_json_str)
     return tokenizer
 
-# Load model
+# Load model with custom object for LSTM
 @st.cache_resource
 def load_model_lstm():
     custom_objects = {'LSTM': CustomLSTM}
@@ -27,7 +26,7 @@ def load_model_lstm():
         model = load_model("lstm_misinformation_model.h5", custom_objects=custom_objects)
         return model
     except Exception as e:
-        st.error(f"Error loading model: {e}")
+        st.error(f"Error loading model with custom objects: {e}")
         return None
 
 # Predict function
